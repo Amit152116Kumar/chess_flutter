@@ -7,7 +7,9 @@ import 'package:flutter/material.dart';
 class ChessBoardUI extends StatefulWidget {
   final bool isFlipped;
   final void Function(int) stopTime;
-  const ChessBoardUI({super.key, required this.isFlipped, required this.stopTime});
+
+  const ChessBoardUI(
+      {super.key, required this.isFlipped, required this.stopTime});
 
   @override
   State<ChessBoardUI> createState() => _ChessBoardUIState();
@@ -15,6 +17,7 @@ class ChessBoardUI extends StatefulWidget {
 
 class _ChessBoardUIState extends State<ChessBoardUI> {
   late Game game;
+
   @override
   void initState() {
     super.initState();
@@ -57,20 +60,29 @@ class _ChessBoardUIState extends State<ChessBoardUI> {
             const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 8),
         itemBuilder: (context, index) {
           Square square = game.fen.board[index];
-          bool isFunctional = game.fen.turnOfWhite ==
-                  game.fen.board[index].piece?.isWhitePiece ||
-              game.fen.board[index].piece == null ||
-              game.legalMoves.contains(index);
+
           bool isSelected =
               game.isSelectedSquare && game.selectedSquare.idx == index;
           bool isValidMove = game.legalMoves.contains(index);
 
-          return SquareUI(
-            square: square,
-            isSelected: isSelected,
-            isValidMove: isValidMove,
-            onTap: () => pieceSelected(index),
-            size: size,
+          return DragTarget<Square>(
+            onWillAcceptWithDetails: (detail) {
+              return isValidMove;
+            },
+            onAcceptWithDetails: (detail) {
+              setState(() {
+                pieceSelected(index);
+              });
+            },
+            builder: (context, candidateData, rejectedData) {
+              return SquareUI(
+                square: square,
+                isSelected: isSelected,
+                isValidMove: isValidMove,
+                onTap: () => pieceSelected(index),
+                size: size,
+              );
+            },
           );
         });
   }
@@ -82,6 +94,7 @@ class SquareUI extends StatelessWidget {
   final bool isValidMove;
   final double size;
   final void Function() onTap;
+
   const SquareUI(
       {super.key,
       required this.square,
@@ -94,37 +107,73 @@ class SquareUI extends StatelessWidget {
   Widget build(BuildContext context) {
     var color =
         square.isWhiteSquare ? GameColor.whiteSquare : GameColor.blackSquare;
+    var altColor =
+        square.isWhiteSquare ? GameColor.blackSquare : GameColor.whiteSquare;
+    double textFontSize = 14;
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-          width: size,
-          height: size,
-          padding: const EdgeInsets.all(2),
-          color: isSelected ? GameColor.selectedSquare : color,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Text(
-                  "${square.idx} -> ${String.fromCharCode(square.file + 97)}${square.rank + 1}"),
-              if (square.piece != null)
-                Image.asset(square.piece!.asset, fit: BoxFit.fill),
-              if (square.piece != null && isValidMove)
-                Container(
-                  decoration: BoxDecoration(
-                    color: GameColor.legalMove,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              if (square.piece == null && isValidMove)
-                Container(
-                  margin: EdgeInsets.all(size * 0.25),
-                  decoration: BoxDecoration(
-                    color: GameColor.legalMove,
-                    shape: BoxShape.circle,
-                  ),
-                )
-            ],
-          )),
-    );
+        onTap: onTap,
+        child: Container(
+            width: size,
+            height: size,
+            padding: const EdgeInsets.all(2),
+            color: isSelected ? GameColor.selectedSquare : color,
+            child: GridTile(
+                header: () {
+                  if (square.idx % 8 == 0) {
+                    return Text(
+                      "${square.rank + 1}",
+                      style: TextStyle(color: altColor, fontSize: textFontSize),
+                    );
+                  }
+                }(),
+                footer: () {
+                  if (square.idx < 8) {
+                    return Padding(
+                      padding: const EdgeInsets.only(left: 75),
+                      child: Text(
+                        String.fromCharCode(square.file + 97),
+                        style:
+                            TextStyle(fontSize: textFontSize, color: altColor),
+                      ),
+                    );
+                  }
+                }(),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (square.piece != null)
+                      Draggable<Square>(
+                          onDragStarted: onTap,
+                          data: square,
+                          feedback: Image.asset(
+                            square.piece!.asset,
+                            scale: 0.75,
+                          ),
+                          childWhenDragging: Image.asset(
+                            square.piece!.asset,
+                            opacity: AlwaysStoppedAnimation(0.5),
+                            fit: BoxFit.cover,
+                          ),
+                          child: Image.asset(square.piece!.asset,
+                              fit: BoxFit.fill)),
+                    if (square.piece != null &&
+                        isValidMove) // To show attacked piece
+                      Container(
+                        decoration: BoxDecoration(
+                          color: GameColor.legalMove,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    if (square.piece == null &&
+                        isValidMove) // To show the move square available
+                      Container(
+                        margin: EdgeInsets.all(size * 0.25),
+                        decoration: BoxDecoration(
+                          color: GameColor.legalMove,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                  ],
+                ))));
   }
 }

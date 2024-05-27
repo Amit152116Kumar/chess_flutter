@@ -12,6 +12,7 @@ class Game {
   late Square selectedSquare;
   late Piece selectedPiece;
   final List<int> offsets = [-1, 1, -8, 8, -7, 7, -9, 9];
+
 // todo Board Representation -> https://en.wikipedia.org/wiki/Board_representation_(computer_chess)
 // todo 3-fold repetition -> https://en.wikipedia.org/wiki/Board_representation_(computer_chess)#:~:text=Board%20representation%20typically,separate%20data%20structures.
 
@@ -62,7 +63,46 @@ class Game {
     }
   }
 
-  void _generateKnightMoves() {}
+  void _generateKnightMoves() {
+    List<int> long = [2, -2];
+    List<int> short = [1, -1];
+
+    for (int i = 0; i < 2; i++) {
+      for (int j = 0; j < 2; j++) {
+        var rank = selectedSquare.rank + long[i];
+        var file = selectedSquare.file + short[j];
+        if (isOnBoard(rank, file)) {
+          var targetSquare = file + rank * 8;
+          if (fen.board[targetSquare].piece == null) {
+            legalMoves.add(targetSquare);
+          } else {
+            if (fen.board[targetSquare].piece!.isWhitePiece !=
+                selectedPiece.isWhitePiece) {
+              legalMoves.add(targetSquare);
+            }
+          }
+        }
+      }
+    }
+
+    for (int i = 0; i < 2; i++) {
+      for (int j = 0; j < 2; j++) {
+        var file = selectedSquare.file + long[i];
+        var rank = selectedSquare.rank + short[j];
+        if (isOnBoard(rank, file)) {
+          var targetSquare = file + rank * 8;
+          if (fen.board[targetSquare].piece == null) {
+            legalMoves.add(targetSquare);
+          } else {
+            if (fen.board[targetSquare].piece!.isWhitePiece !=
+                selectedPiece.isWhitePiece) {
+              legalMoves.add(targetSquare);
+            }
+          }
+        }
+      }
+    }
+  }
 
   void _generatePawnMoves() {
     var direction = selectedPiece.isWhitePiece ? 1 : -1;
@@ -106,18 +146,111 @@ class Game {
     }
   }
 
-  void _generateBishopMoves() {}
+  void _generateBishopMoves() {
+    for (int i = 0; i < 2; i++) {
+      for (int j = 0; j < 2; j++) {
+        var rank = selectedSquare.rank + offsets[i];
+        var file = selectedSquare.file + offsets[j];
+        if (isOnBoard(rank, file)) {
+          var targetSquare = rank * 8 + file;
+          while (isOnBoard(rank, file)) {
+            if (fen.board[targetSquare].piece == null) {
+              legalMoves.add(targetSquare);
+            } else {
+              if (fen.board[targetSquare].piece!.isWhitePiece !=
+                  selectedPiece.isWhitePiece) {
+                legalMoves.add(targetSquare);
+              }
+              break;
+            }
+            rank += offsets[i];
+            file += offsets[j];
+            targetSquare = rank * 8 + file;
+          }
+        }
+      }
+    }
+  }
 
-  void _generateKingMoves() {}
+  void _generateKingMoves() {
+    List<int> arr = [0, 1, -1];
+    for (int i = 0; i < arr.length; i++) {
+      for (int j = 0; j < arr.length; j++) {
+        var rank = selectedSquare.rank + arr[i];
+        var file = selectedSquare.file + arr[j];
+        var targetSquare = file + rank * 8;
+        if (rank >= 0 && rank < 8 && file >= 0 && file < 8) {
+          if (fen.board[targetSquare].piece == null) {
+            legalMoves.add(targetSquare);
+          } else {
+            if (fen.board[targetSquare].piece!.isWhitePiece !=
+                selectedPiece.isWhitePiece) {
+              legalMoves.add(targetSquare);
+            }
+          }
+        }
+      }
+    }
+  }
 
-  void _generateQueenMoves() {}
+  void _generateQueenMoves() {
+    _generateBishopMoves();
+    _generateRookMoves();
+  }
 
-  void _generateRookMoves() {}
+  void _generateRookMoves() {
+    List<int> arr = [-1, 1];
+
+    // Vertical Moves
+    for (int i = 0; i < 2; i++) {
+      var direction = arr[i];
+      var rank = selectedSquare.rank + direction;
+      var file = selectedSquare.file;
+      while (isOnBoard(rank, file)) {
+        var targetSquare = file + rank * 8;
+        if (fen.board[targetSquare].piece == null) {
+          legalMoves.add(targetSquare);
+        } else {
+          if (fen.board[targetSquare].piece!.isWhitePiece !=
+              selectedPiece.isWhitePiece) {
+            legalMoves.add(targetSquare);
+          }
+          break;
+        }
+        rank = rank + direction;
+      }
+    }
+    // Horizontal Moves
+
+    for (int i = 0; i < 2; i++) {
+      var direction = arr[i];
+      var rank = selectedSquare.rank;
+      var file = selectedSquare.file + direction;
+      while (isOnBoard(rank, file)) {
+        var targetSquare = file + rank * 8;
+        if (fen.board[targetSquare].piece == null) {
+          legalMoves.add(targetSquare);
+        } else {
+          if (fen.board[targetSquare].piece!.isWhitePiece !=
+              selectedPiece.isWhitePiece) {
+            legalMoves.add(targetSquare);
+          }
+          break;
+        }
+        file = file + direction;
+      }
+    }
+  }
+
+  bool isWrapped(int rank, int file) {
+    if ((rank - selectedSquare.rank).abs() > 2 ||
+        (file - selectedSquare.file) > 2) return true;
+    return false;
+  }
 
   bool isOnBoard(int idx, [int? file]) {
     if (file == null) return idx >= 0 && idx < 64;
-
-    return idx >= 0 && idx < 8 && file >= 0 && idx < 8;
+    return idx >= 0 && idx < 8 && file >= 0 && file < 8;
   }
 
   bool isSameFile(int a, int b) {
