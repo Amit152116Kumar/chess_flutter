@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-import 'SquareClass.dart';
+import '../models/Piece.dart';
+import '../models/Square.dart';
 import 'helper.dart';
 
 class FEN {
@@ -65,7 +66,7 @@ class FEN {
     return board;
   }
 
-  String getFEN(){
+  String getFEN() {
     String fen = '';
     int emptySquare = 0;
     for (int i = 0; i < 64; i++) {
@@ -106,7 +107,7 @@ class FEN {
     fen += fullMoveNumber.toString();
     return fen;
   }
-  
+
   int getSquareIdx(String square) {
     int file = square.codeUnits[0] - 97;
     int rank = int.parse(square[1]) - 1;
@@ -125,4 +126,3 @@ class FEN {
     }
   }
 }
-

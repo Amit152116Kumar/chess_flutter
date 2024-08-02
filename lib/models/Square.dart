@@ -1,4 +1,4 @@
-import 'helper.dart';
+import 'Piece.dart';
 
 class Square implements Comparable<Square> {
   final int rank;
@@ -8,7 +8,7 @@ class Square implements Comparable<Square> {
   late bool highlighted;
   late Piece? piece;
 
-  Square(this.rank, this.file,{this.piece}) {
+  Square(this.rank, this.file, {this.piece}) {
     idx = file + rank * 8;
     highlighted = false;
     isWhiteSquare = (rank + file) % 2 == 0;
@@ -20,7 +20,6 @@ class Square implements Comparable<Square> {
   }
 
   void prettify() {
-    print(
-        "Position: $idx, File: $file, Rank: $rank, Piece: $piece,");
+    print("Position: $idx, File: $file, Rank: $rank, Piece: $piece,");
   }
 }
