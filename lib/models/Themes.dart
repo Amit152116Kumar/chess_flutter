@@ -6,12 +6,11 @@ class AppTheme {
   final Color accentColor1;
   final Color accentColor2;
 
-  AppTheme({
-    required this.primaryColor,
-    required this.secondaryColor,
-    required this.accentColor1,
-    required this.accentColor2,
-  });
+  AppTheme(
+      {required this.primaryColor,
+      required this.secondaryColor,
+      required this.accentColor1,
+      required this.accentColor2});
 }
 
 final appColors1 = AppTheme(
@@ -36,16 +35,15 @@ class GameTheme {
   final Color promotionSquare;
   final Color promotionPiece;
 
-  GameTheme({
-    required this.whiteSquare,
-    required this.blackSquare,
-    required this.selectedSquare,
-    required this.legalMove,
-    required this.checkSquare,
-    required this.lastMove,
-    required this.promotionSquare,
-    required this.promotionPiece,
-  });
+  GameTheme(
+      {required this.whiteSquare,
+      required this.blackSquare,
+      required this.selectedSquare,
+      required this.legalMove,
+      required this.checkSquare,
+      required this.lastMove,
+      required this.promotionSquare,
+      required this.promotionPiece});
 }
 
 final defaultTheme = GameTheme(

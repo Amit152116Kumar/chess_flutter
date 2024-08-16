@@ -1,5 +1,6 @@
 import 'package:chess_flutter/screens/game_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:fraction/fraction.dart';
 
 import '../models/TimeControl.dart';
 
@@ -63,11 +64,11 @@ class TimeControlBox extends StatelessWidget {
   const TimeControlBox({super.key, required this.timeControl});
 
   String get event {
-    return timeControl.minutes > 15
+    return timeControl.time.inMinutes > 15
         ? "Classical"
-        : timeControl.minutes >= 10
+        : timeControl.time.inMinutes >= 10
             ? "Rapid"
-            : timeControl.minutes >= 3
+            : timeControl.time.inMinutes >= 3
                 ? "Blitz"
                 : "Bullet";
   }
@@ -88,7 +89,7 @@ class TimeControlBox extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text("${timeControl.minutes}+${timeControl.increment.inSeconds.toString()}",
+                  Text("${timeControl.time.inMinutes}+${timeControl.increment.inSeconds}",
                       style: const TextStyle(fontSize: 25)),
                   Text(event, style: const TextStyle(fontSize: 20))
                 ])));
@@ -132,83 +133,76 @@ class CustomGameDialog extends StatefulWidget {
 }
 
 class _CustomGameDialogState extends State<CustomGameDialog> {
-  String side = 'Random Side';
-  String variant = 'Standard';
-  String timeControl = 'Real time';
-  double minutesPerSide = 5;
-  double incrementInSeconds = 3;
   bool isRated = true;
-  double ratingRange = 500;
+  double ratingRange = 250;
+
+  double _minuteSliderValue = 9;
+  double _incrementSliderValue = 3;
+
+  double _getMinuteMappedValue() {
+    if (_minuteSliderValue <= 4) {
+      return _minuteSliderValue * 0.25;
+    } else if (_minuteSliderValue <= 24) {
+      return _minuteSliderValue - 4;
+    } else if (_minuteSliderValue <= 29) {
+      return 20 + (_minuteSliderValue - 24) * 5;
+    } else {
+      return 45 + (_minuteSliderValue - 29) * 15;
+    }
+  }
+
+  double _getIncrementMappedValue() {
+    if (_incrementSliderValue <= 20) {
+      return _incrementSliderValue;
+    } else if (_incrementSliderValue <= 25) {
+      return 20 + (_incrementSliderValue - 20) * 5;
+    } else if (_incrementSliderValue == 26) {
+      return 60;
+    } else {
+      return 60 + (_incrementSliderValue - 26) * 30;
+    }
+  }
+
+  String fractionToString(double value) {
+    if (value > 0 && value < 1) {
+      return Fraction.fromDouble(value).toStringAsGlyph();
+    }
+    return value.toInt().toString();
+  }
 
   @override
   Widget build(BuildContext context) {
+    double mappedMinuteValue = _getMinuteMappedValue();
+    int mappedIncrementValue = _getIncrementMappedValue().toInt();
+    String minutes = fractionToString(mappedMinuteValue);
     return AlertDialog(
         title: const Text('Create a custom game'),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
-          Row(children: [
-            Text('Side: ', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            DropdownButton<String>(
-                value: side,
-                items: <String>['Random Side', 'White', 'Black'].map((String value) {
-                  return DropdownMenuItem<String>(value: value, child: Text(value));
-                }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    side = newValue!;
-                  });
-                })
-          ]),
-          Row(children: [
-            Text('Variant: ', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            DropdownButton<String>(
-                value: variant,
-                items: <String>['Standard', 'Blitz', 'Bullet'].map((String value) {
-                  return DropdownMenuItem<String>(value: value, child: Text(value));
-                }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    variant = newValue!;
-                  });
-                })
-          ]),
-          Row(children: [
-            Text('Time control: ',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            DropdownButton<String>(
-                value: timeControl,
-                items: <String>['Real time', 'Correspondence'].map((String value) {
-                  return DropdownMenuItem<String>(value: value, child: Text(value));
-                }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    timeControl = newValue!;
-                  });
-                })
-          ]),
-          Text('Minutes per side: ${minutesPerSide.toInt()}',
+          const SizedBox(height: 10),
+          Text('Minutes per side: $minutes',
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           Slider(
-              value: minutesPerSide,
-              min: 1,
-              max: 60,
-              divisions: 59,
-              label: minutesPerSide.round().toString(),
+              value: _minuteSliderValue,
+              min: 0,
+              max: 34,
+              divisions: 34,
+              label: minutes,
               onChanged: (double value) {
                 setState(() {
-                  minutesPerSide = value;
+                  _minuteSliderValue = value;
                 });
               }),
-          Text('Increment in seconds: ${incrementInSeconds.toInt()}',
+          Text('Increment in seconds: $mappedIncrementValue',
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           Slider(
-              value: incrementInSeconds,
+              value: _incrementSliderValue,
               min: 0,
-              max: 60,
-              divisions: 60,
-              label: incrementInSeconds.round().toString(),
+              max: 30,
+              divisions: 30,
+              label: mappedIncrementValue.toString(),
               onChanged: (double value) {
                 setState(() {
-                  incrementInSeconds = value;
+                  _incrementSliderValue = value;
                 });
               }),
           SwitchListTile(
@@ -225,8 +219,8 @@ class _CustomGameDialogState extends State<CustomGameDialog> {
           Slider(
               value: ratingRange,
               min: 0,
-              max: 1000,
-              divisions: 1000,
+              max: 500,
+              divisions: 500,
               label: ratingRange.round().toString(),
               onChanged: (double value) {
                 setState(() {
@@ -244,9 +238,17 @@ class _CustomGameDialogState extends State<CustomGameDialog> {
           TextButton(
               onPressed: () {
                 // Handle create game action
-                Navigator.of(context).pop(TimeControl(
-                    minutes: minutesPerSide.toInt(),
-                    increment: Duration(seconds: incrementInSeconds.toInt())));
+                Duration time;
+                if (mappedMinuteValue >= 1) {
+                  time = Duration(minutes: mappedMinuteValue.toInt());
+                } else if (mappedMinuteValue > 0) {
+                  time = Duration(seconds: (mappedMinuteValue * 60).toInt());
+                } else {
+                  time = Duration(seconds: mappedIncrementValue.toInt());
+                }
+
+                Navigator.of(context).pop(
+                    TimeControl(time: time, increment: Duration(seconds: mappedIncrementValue)));
               },
               child:
                   Text('Create', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)))

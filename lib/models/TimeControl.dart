@@ -1,20 +1,20 @@
 class TimeControl {
-  final int minutes;
+  final Duration time;
   final Duration increment;
 
-  TimeControl({required this.minutes, required this.increment});
+  const TimeControl({required this.time, required this.increment});
 }
 
-List<TimeControl> timeControls = [
-  TimeControl(minutes: 1, increment: const Duration(seconds: 0)),
-  TimeControl(minutes: 2, increment: const Duration(seconds: 1)),
-  TimeControl(minutes: 3, increment: const Duration(seconds: 0)),
-  TimeControl(minutes: 3, increment: const Duration(seconds: 2)),
-  TimeControl(minutes: 5, increment: const Duration(seconds: 0)),
-  TimeControl(minutes: 5, increment: const Duration(seconds: 3)),
-  TimeControl(minutes: 10, increment: const Duration(seconds: 0)),
-  TimeControl(minutes: 10, increment: const Duration(seconds: 5)),
-  TimeControl(minutes: 15, increment: const Duration(seconds: 10)),
-  TimeControl(minutes: 30, increment: const Duration(seconds: 0)),
-  TimeControl(minutes: 30, increment: const Duration(seconds: 20))
+List<TimeControl> timeControls = const [
+  TimeControl(time: Duration(minutes: 1), increment: Duration(seconds: 0)),
+  TimeControl(time: Duration(minutes: 2), increment: Duration(seconds: 1)),
+  TimeControl(time: Duration(minutes: 3), increment: Duration(seconds: 0)),
+  TimeControl(time: Duration(minutes: 3), increment: Duration(seconds: 2)),
+  TimeControl(time: Duration(minutes: 5), increment: Duration(seconds: 0)),
+  TimeControl(time: Duration(minutes: 5), increment: Duration(seconds: 3)),
+  TimeControl(time: Duration(minutes: 10), increment: Duration(seconds: 0)),
+  TimeControl(time: Duration(minutes: 10), increment: Duration(seconds: 5)),
+  TimeControl(time: Duration(minutes: 15), increment: Duration(seconds: 10)),
+  TimeControl(time: Duration(minutes: 30), increment: Duration(seconds: 0)),
+  TimeControl(time: Duration(minutes: 30), increment: Duration(seconds: 20))
 ];

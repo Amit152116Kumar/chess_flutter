@@ -1,12 +1,13 @@
 import 'package:chess_flutter/backend/GameClass.dart';
 import 'package:chess_flutter/backend/helper.dart';
+import 'package:chess_flutter/models/Piece.dart';
 import 'package:chess_flutter/models/Square.dart';
 import 'package:chess_flutter/models/Themes.dart';
 import 'package:flutter/material.dart';
 
 class ChessBoardUI extends StatefulWidget {
   final bool isFlipped;
-  final void Function(int, bool) pressClock;
+  final void Function(int, bool, String, Piece?) pressClock;
 
   const ChessBoardUI({super.key, required this.isFlipped, required this.pressClock});
 
@@ -28,7 +29,8 @@ class _ChessBoardUIState extends State<ChessBoardUI> {
   void pieceSelected(int idx) {
     setState(() {
       if (game.isSelectedSquare && game.legalMoves.contains(idx)) {
-        widget.pressClock(game.score, !game.fen.turnOfWhite);
+        widget.pressClock(
+            game.score, !game.fen.turnOfWhite, getSquareName(idx), game.fen.board[idx].piece);
         game.makeMove(idx);
       } else if (game.fen.turnOfWhite == game.fen.board[idx].piece?.isWhitePiece) {
         game.setSelectedSquareIdx(idx);

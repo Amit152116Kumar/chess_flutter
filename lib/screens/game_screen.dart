@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:chess_flutter/backend/helper.dart';
 import 'package:chess_flutter/main.dart';
+import 'package:chess_flutter/models/Piece.dart';
 import 'package:chess_flutter/models/TimeControl.dart';
 import 'package:chess_flutter/models/User.dart';
 import 'package:chess_flutter/screens/setting_screen.dart';
 import 'package:chess_flutter/widget/chessboard.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class GameScreen extends StatefulWidget {
@@ -34,9 +36,15 @@ class _GameScreenState extends State<GameScreen> {
       BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chat'),
       BottomNavigationBarItem(icon: Icon(Icons.arrow_back_ios), label: 'Back'),
       BottomNavigationBarItem(icon: Icon(Icons.arrow_forward_ios), label: 'Forward')
-    ],
+    ]
   };
   bool turnOfWhite = true;
+  List<String> moves = [];
+
+  List<Piece> takenPiecesByWhite = [];
+  List<Piece> takenPiecesByBlack = [];
+
+  int score = 0;
 
   @override
   void initState() {
@@ -50,7 +58,7 @@ class _GameScreenState extends State<GameScreen> {
         body: Container(
             alignment: Alignment.topCenter,
             child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
-              const MoveHistoryUI(),
+              MoveHistoryUI(moves: moves),
               const Padding(padding: EdgeInsets.all(10)),
               Column(children: [
                 UserWithTimer(
@@ -59,6 +67,8 @@ class _GameScreenState extends State<GameScreen> {
                         imageUrl: "https://www.linkedin.com/favicon.ico",
                         rating: 1800),
                     timeControl: widget.timeControl,
+                    takenPieces: takenPiecesByBlack,
+                    score: score,
                     myTurn: !turnOfWhite),
                 const SizedBox(height: 15),
                 ChessBoardUI(isFlipped: isFlipped, pressClock: pressClock),
@@ -69,7 +79,9 @@ class _GameScreenState extends State<GameScreen> {
                         imageUrl: "https://www.github.com/favicon"
                             ".ico",
                         rating: 1599),
+                    score: score,
                     myTurn: turnOfWhite,
+                    takenPieces: takenPiecesByWhite,
                     timeControl: widget.timeControl)
               ])
             ])),
@@ -81,9 +93,45 @@ class _GameScreenState extends State<GameScreen> {
             items: bottomNavItems[GameStatus.inProgress]!));
   }
 
-  void pressClock(int score, bool turnOfWhite) {
+  List<Piece> sortPieces(List<Piece> pieces) {
+    mergeSort(pieces, compare: (a, b) {
+      if (a.value == b.value) {
+        return a.name.name.compareTo(b.name.name);
+      }
+      return b.value.abs().compareTo(a.value.abs());
+    });
+    return pieces;
+  }
+
+  void removeSamePiece() {
+    for (int i = 0; i < takenPiecesByWhite.length; i++) {
+      for (int j = 0; j < takenPiecesByBlack.length; j++) {
+        if (takenPiecesByWhite[i].name == takenPiecesByBlack[j].name) {
+          takenPiecesByWhite.removeAt(i);
+          takenPiecesByBlack.removeAt(j);
+          i--;
+          break;
+        }
+      }
+    }
+  }
+
+  void pressClock(int score, bool turnOfWhite, String move, Piece? piece) {
     setState(() {
       this.turnOfWhite = turnOfWhite;
+      this.score = score;
+      moves.add(move);
+      if (piece == null) {
+        return;
+      }
+      if (piece.isWhitePiece) {
+        takenPiecesByBlack.add(piece);
+        takenPiecesByBlack = sortPieces(takenPiecesByBlack);
+      } else {
+        takenPiecesByWhite.add(piece);
+        takenPiecesByWhite = sortPieces(takenPiecesByWhite);
+      }
+      removeSamePiece();
     });
   }
 
@@ -120,40 +168,64 @@ class _GameScreenState extends State<GameScreen> {
   }
 }
 
+// TODO  Add scrolling to moves when it is made & also correct the move history shown
 class MoveHistoryUI extends StatefulWidget {
-  const MoveHistoryUI({super.key});
+  final List<String> moves;
+
+  const MoveHistoryUI({super.key, required this.moves});
 
   @override
   State<MoveHistoryUI> createState() => _MoveHistoryUIState();
 }
 
 class _MoveHistoryUIState extends State<MoveHistoryUI> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void didUpdateWidget(MoveHistoryUI oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.moves.length != widget.moves.length) {
+      _scrollToEnd();
+    }
+  }
+
+  void _scrollToEnd() {
+    _scrollController.animateTo(_scrollController.position.maxScrollExtent,
+        duration: Duration(milliseconds: 10), curve: Curves.easeOut);
+  }
+
   @override
   Widget build(BuildContext context) {
+    print(widget.moves);
     return Container(
         height: 30,
         color: appTheme.primaryColor,
         child: ListView.builder(
-            itemCount: 10,
+            itemCount: (widget.moves.length / 2).ceil(),
             scrollDirection: Axis.horizontal,
+            controller: _scrollController,
             padding: const EdgeInsets.symmetric(horizontal: 10),
             itemBuilder: (context, index) {
+              int moveIndex = index * 2;
+              bool hasBlackMove = moveIndex + 1 < widget.moves.length;
               return RichText(
                   text: TextSpan(
                       style: const TextStyle(fontSize: 16, color: Colors.white),
                       children: [
-                    TextSpan(text: "$index."),
+                    TextSpan(text: "${index + 1}."),
                     const TextSpan(text: " "),
                     WidgetSpan(
                         child: Image.asset("assets/images/white_pawn.png",
                             fit: BoxFit.fill, height: 20)),
-                    const TextSpan(text: "e4"),
+                    TextSpan(text: widget.moves[moveIndex]),
                     const TextSpan(text: "  "),
-                    WidgetSpan(
-                        child: Image.asset("assets/images/black_pawn.png",
-                            fit: BoxFit.fill, height: 20)),
-                    const TextSpan(text: "e5"),
-                    const TextSpan(text: "     ")
+                    if (hasBlackMove) ...[
+                      WidgetSpan(
+                          child: Image.asset("assets/images/black_pawn.png",
+                              fit: BoxFit.fill, height: 20)),
+                      TextSpan(text: widget.moves[moveIndex + 1]),
+                      const TextSpan(text: "     ")
+                    ]
                   ]));
             }));
   }
@@ -163,9 +235,16 @@ class UserWithTimer extends StatefulWidget {
   final TimeControl timeControl;
   final User user;
   final bool myTurn;
+  final List<Piece> takenPieces;
+  final int score;
 
   const UserWithTimer(
-      {super.key, required this.user, required this.timeControl, required this.myTurn});
+      {super.key,
+      required this.user,
+      required this.timeControl,
+      required this.myTurn,
+      required this.takenPieces,
+      required this.score});
 
   @override
   State<UserWithTimer> createState() => _UserWithTimerState();
@@ -177,22 +256,21 @@ class _UserWithTimerState extends State<UserWithTimer> {
 
   @override
   void initState() {
-    time = Duration(minutes: widget.timeControl.minutes);
+    super.initState();
+    time = widget.timeControl.time;
     if (widget.myTurn) {
       startTimer();
     }
-    super.initState();
   }
 
   @override
   void didUpdateWidget(UserWithTimer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.myTurn != widget.myTurn) {
-      if (widget.myTurn) {
-        startTimer();
-      } else {
-        stopTimer();
-      }
+    if (oldWidget.myTurn == widget.myTurn) return;
+    if (widget.myTurn) {
+      startTimer();
+    } else {
+      stopTimer();
     }
   }
 
@@ -236,7 +314,7 @@ class _UserWithTimerState extends State<UserWithTimer> {
                 const SizedBox(width: 10),
                 Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       RichText(
                           text: TextSpan(
@@ -248,19 +326,16 @@ class _UserWithTimerState extends State<UserWithTimer> {
                             TextSpan(text: " (${widget.user.rating})")
                           ])),
                       const Padding(padding: EdgeInsets.all(2)),
-                      Row(
-                          // To display the taken pieces of opponent
-                          children: [
-                            Image.asset("assets/images/black_queen.png", height: 20),
-                            Image.asset("assets/images/black_pawn.png", height: 20)
-                          ])
+                      // To display the taken pieces of opponent
+                      Row(children: [
+                        if (widget.takenPieces.isNotEmpty)
+                          for (var piece in widget.takenPieces)
+                            Image.asset(piece.asset, height: 20, width: 20, fit: BoxFit.fill),
+                        if (widget.takenPieces.isEmpty) const SizedBox(height: 20)
+                      ])
                     ])
               ]),
-          Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                  color: Colors.blueGrey.shade300, borderRadius: BorderRadius.circular(10)),
-              child: timerWidget)
+          timerWidget
         ]));
   }
 
@@ -269,13 +344,27 @@ class _UserWithTimerState extends State<UserWithTimer> {
     int seconds = time.inSeconds % 60;
     int milliseconds = (time.inMilliseconds % 1000) ~/ 100;
 
-    return RichText(
-        text: TextSpan(style: const TextStyle(color: Colors.white), children: [
-      TextSpan(
-          text: "${minutes < 10 ? "0$minutes" : minutes}:", style: const TextStyle(fontSize: 28)),
-      TextSpan(
-          text: "${seconds < 10 ? "0$seconds" : seconds}", style: const TextStyle(fontSize: 28)),
-      TextSpan(text: ".$milliseconds", style: const TextStyle(fontSize: 21))
-    ]));
+    var color = widget.myTurn
+        ? time.inSeconds > 10
+            ? Colors.green.shade800.withOpacity(0.5)
+            : Colors.red.shade900.withOpacity(0.75)
+        : time.inSeconds > 10
+            ? Colors.grey.shade900
+            : Colors.red.shade900.withAlpha(80);
+
+    return Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(10)),
+        child: RichText(
+            text: TextSpan(style: const TextStyle(color: Colors.white), children: [
+          TextSpan(
+              text: "${minutes < 10 ? "0$minutes" : minutes}",
+              style: const TextStyle(fontSize: 28)),
+          const TextSpan(text: ":", style: TextStyle(fontSize: 28)),
+          TextSpan(
+              text: "${seconds < 10 ? "0$seconds" : seconds}",
+              style: const TextStyle(fontSize: 28)),
+          TextSpan(text: ".$milliseconds", style: const TextStyle(fontSize: 21))
+        ])));
   }
 }

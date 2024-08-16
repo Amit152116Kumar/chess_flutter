@@ -108,18 +108,6 @@ class FEN {
     return fen;
   }
 
-  int getSquareIdx(String square) {
-    int file = square.codeUnits[0] - 97;
-    int rank = int.parse(square[1]) - 1;
-    return rank * 8 + file;
-  }
-
-  String getSquareName(int enPassantSquare) {
-    int file = enPassantSquare % 8;
-    int rank = enPassantSquare ~/ 8;
-    return String.fromCharCode(file + 97) + (rank + 1).toString();
-  }
-
   void print() {
     for (int i = 0; i < 64; i++) {
       board[i].prettify();
