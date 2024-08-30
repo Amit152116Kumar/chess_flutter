@@ -30,6 +30,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  shared_preferences: ^2.3.2
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -61,19 +62,47 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/images/
+    - assets/piece_sets/alpha/
+    - assets/piece_sets/california/
+    - assets/piece_sets/caliente/
+    - assets/piece_sets/cardinal/
+    - assets/piece_sets/cburnett/
+    - assets/piece_sets/celtic/
+    - assets/piece_sets/chess7/
+    - assets/piece_sets/chessnut/
+    - assets/piece_sets/companion/
+    - assets/piece_sets/disguised/
+    - assets/piece_sets/dubrovny/
+    - assets/piece_sets/fantasy/
+    - assets/piece_sets/fresca/
+    - assets/piece_sets/gioco/
+    - assets/piece_sets/governor/
+    - assets/piece_sets/icpieces/
+    - assets/piece_sets/kosal/
+    - assets/piece_sets/leipzig/
+    - assets/piece_sets/libra/
+    - assets/piece_sets/maestro/
+    - assets/piece_sets/merida/
+    - assets/piece_sets/mpchess/
+    - assets/piece_sets/pirouetti/
+    - assets/piece_sets/reillycraig/
+    - assets/piece_sets/riohacha/
+    - assets/piece_sets/spatial/
+    - assets/piece_sets/staunty/
+    - assets/piece_sets/tatiana/
+    - assets/boards/
 
-  # An image asset can refer to one or more resolution-specific "variants", see
-  # https://flutter.dev/assets-and-images/#resolution-aware
+    # An image asset can refer to one or more resolution-specific "variants", see
+    # https://flutter.dev/assets-and-images/#resolution-aware
 
-  # For details regarding adding assets from package dependencies, see
-  # https://flutter.dev/assets-and-images/#from-packages
+    # For details regarding adding assets from package dependencies, see
+    # https://flutter.dev/assets-and-images/#from-packages
 
-  # To add custom fonts to your application, add a fonts section here,
-  # in this "flutter" section. Each entry in this list should have a
-  # "family" key with the font family name, and a "fonts" key with a
-  # list giving the asset and other descriptors for the font. For
-  # example:
+    # To add custom fonts to your application, add a fonts section here,
+    # in this "flutter" section. Each entry in this list should have a
+    # "family" key with the font family name, and a "fonts" key with a
+    # list giving the asset and other descriptors for the font. For
+    # example:
   fonts:
     - family: Dancing Script
       fonts:

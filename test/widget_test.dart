@@ -5,10 +5,11 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
+import 'package:chess_flutter/backend/helper.dart';
+import 'package:chess_flutter/main.dart';
+import 'package:chess_flutter/models/Piece.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:chess_flutter/main.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
@@ -28,7 +29,8 @@ void main() {
     expect(find.text('1'), findsOneWidget);
   });
 
-  test('Convert the FEN String to my Data Structure',(){
-
+  test('MyTest', () {
+    Piece p = Piece(PieceName.king, true);
+    print(p.asset);
   });
 }

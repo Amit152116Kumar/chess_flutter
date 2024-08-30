@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:chess_flutter/backend/helper.dart';
 import 'package:chess_flutter/main.dart';
 import 'package:chess_flutter/models/Piece.dart';
+import 'package:chess_flutter/models/PieceSets.dart';
 import 'package:chess_flutter/models/TimeControl.dart';
 import 'package:chess_flutter/models/User.dart';
 import 'package:chess_flutter/screens/setting_screen.dart';
@@ -39,7 +40,7 @@ class _GameScreenState extends State<GameScreen> {
     ]
   };
   bool turnOfWhite = true;
-  List<String> moves = [];
+  Map<String, String> moves = {};
 
   List<Piece> takenPiecesByWhite = [];
   List<Piece> takenPiecesByBlack = [];
@@ -54,7 +55,7 @@ class _GameScreenState extends State<GameScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(title: Text("Flutter Chess"), centerTitle: true),
+        appBar: AppBar(title: const Text("Flutter Chess"), centerTitle: true),
         body: Container(
             alignment: Alignment.topCenter,
             child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
@@ -69,6 +70,7 @@ class _GameScreenState extends State<GameScreen> {
                     timeControl: widget.timeControl,
                     takenPieces: takenPiecesByBlack,
                     score: score,
+                    timerStopCallback: timerStopCallback,
                     myTurn: !turnOfWhite),
                 const SizedBox(height: 15),
                 ChessBoardUI(isFlipped: isFlipped, pressClock: pressClock),
@@ -81,6 +83,7 @@ class _GameScreenState extends State<GameScreen> {
                         rating: 1599),
                     score: score,
                     myTurn: turnOfWhite,
+                    timerStopCallback: timerStopCallback,
                     takenPieces: takenPiecesByWhite,
                     timeControl: widget.timeControl)
               ])
@@ -116,14 +119,36 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
-  void pressClock(int score, bool turnOfWhite, String move, Piece? piece) {
+  void timerStopCallback() {
+    String winner = turnOfWhite ? "Black" : "White";
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+              title: const Text("Game Over"),
+              content: Text("Time out! $winner wins"),
+              actions: [
+                TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text("OK"))
+              ]);
+        });
+  }
+
+  void pressClock(
+      {required int score,
+      required bool turnOfWhite,
+      required Map<String, String> move,
+      required Piece? piece}) {
     setState(() {
       this.turnOfWhite = turnOfWhite;
       this.score = score;
-      moves.add(move);
-      if (piece == null) {
-        return;
-      }
+      moves.addAll(move);
+      print("${moves.keys},${moves.values}");
+      if (piece == null) return;
       if (piece.isWhitePiece) {
         takenPiecesByBlack.add(piece);
         takenPiecesByBlack = sortPieces(takenPiecesByBlack);
@@ -142,7 +167,7 @@ class _GameScreenState extends State<GameScreen> {
           builder: (BuildContext context) {
             TextStyle optionsStyle = TextStyle(color: appTheme.primaryColor, fontSize: 18);
             return AlertDialog(
-                title: Text('Game Options'),
+                title: const Text('Game Options'),
                 backgroundColor: appTheme.secondaryColor,
                 content: Column(mainAxisSize: MainAxisSize.min, children: [
                   ListTile(
@@ -159,8 +184,8 @@ class _GameScreenState extends State<GameScreen> {
                       title: Text('Settings', style: optionsStyle),
                       onTap: () {
                         Navigator.of(context).pop();
-                        Navigator.push(
-                            context, MaterialPageRoute(builder: (context) => SettingScreen()));
+                        Navigator.push(context,
+                            MaterialPageRoute(builder: (context) => const SettingScreen()));
                       })
                 ]));
           });
@@ -170,7 +195,7 @@ class _GameScreenState extends State<GameScreen> {
 
 // TODO  Add scrolling to moves when it is made & also correct the move history shown
 class MoveHistoryUI extends StatefulWidget {
-  final List<String> moves;
+  final Map<String, String> moves;
 
   const MoveHistoryUI({super.key, required this.moves});
 
@@ -191,12 +216,11 @@ class _MoveHistoryUIState extends State<MoveHistoryUI> {
 
   void _scrollToEnd() {
     _scrollController.animateTo(_scrollController.position.maxScrollExtent,
-        duration: Duration(milliseconds: 10), curve: Curves.easeOut);
+        duration: const Duration(milliseconds: 10), curve: Curves.easeOut);
   }
 
   @override
   Widget build(BuildContext context) {
-    print(widget.moves);
     return Container(
         height: 30,
         color: appTheme.primaryColor,
@@ -208,6 +232,9 @@ class _MoveHistoryUIState extends State<MoveHistoryUI> {
             itemBuilder: (context, index) {
               int moveIndex = index * 2;
               bool hasBlackMove = moveIndex + 1 < widget.moves.length;
+              var move = widget.moves.entries.elementAt(moveIndex);
+              var move2 = hasBlackMove ? widget.moves.entries.elementAt(moveIndex + 1) : null;
+              print("move $move, Move2 $move2");
               return RichText(
                   text: TextSpan(
                       style: const TextStyle(fontSize: 16, color: Colors.white),
@@ -215,15 +242,15 @@ class _MoveHistoryUIState extends State<MoveHistoryUI> {
                     TextSpan(text: "${index + 1}."),
                     const TextSpan(text: " "),
                     WidgetSpan(
-                        child: Image.asset("assets/images/white_pawn.png",
+                        child: Image.asset(myPieceSet.path + move.value,
                             fit: BoxFit.fill, height: 20)),
-                    TextSpan(text: widget.moves[moveIndex]),
+                    TextSpan(text: move.key),
                     const TextSpan(text: "  "),
                     if (hasBlackMove) ...[
                       WidgetSpan(
-                          child: Image.asset("assets/images/black_pawn.png",
+                          child: Image.asset(myPieceSet.path + move2!.value,
                               fit: BoxFit.fill, height: 20)),
-                      TextSpan(text: widget.moves[moveIndex + 1]),
+                      TextSpan(text: move2.key),
                       const TextSpan(text: "     ")
                     ]
                   ]));
@@ -237,6 +264,7 @@ class UserWithTimer extends StatefulWidget {
   final bool myTurn;
   final List<Piece> takenPieces;
   final int score;
+  final void Function() timerStopCallback;
 
   const UserWithTimer(
       {super.key,
@@ -244,7 +272,8 @@ class UserWithTimer extends StatefulWidget {
       required this.timeControl,
       required this.myTurn,
       required this.takenPieces,
-      required this.score});
+      required this.score,
+      required this.timerStopCallback});
 
   @override
   State<UserWithTimer> createState() => _UserWithTimerState();
@@ -279,6 +308,7 @@ class _UserWithTimerState extends State<UserWithTimer> {
     timer = Timer.periodic(const Duration(milliseconds: 1), (timer) {
       if (remMilliSeconds == 0) {
         timer.cancel();
+        widget.timerStopCallback();
       } else {
         setState(() {
           time = Duration(milliseconds: --remMilliSeconds);

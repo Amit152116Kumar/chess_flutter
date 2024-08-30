@@ -1,8 +1,7 @@
+import 'package:chess_flutter/models/TimeControl.dart';
 import 'package:chess_flutter/screens/game_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:fraction/fraction.dart';
-
-import '../models/TimeControl.dart';
 
 class HomeScreen extends StatefulWidget {
   final String title;
@@ -107,13 +106,16 @@ class _CustomGameButtonState extends State<CustomGameButton> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-        onTap: () async {
-          final timeControl = await showDialog<TimeControl>(
-              context: context, builder: (context) => CustomGameDialog());
+        onTap: () {
+          TimeControl? timeControl;
+          showDialog<TimeControl>(context: context, builder: (context) => const CustomGameDialog())
+              .then((value) {
+            timeControl = value;
+          });
 
           if (timeControl != null) {
             Navigator.push(context,
-                MaterialPageRoute(builder: (context) => GameScreen(timeControl: timeControl)));
+                MaterialPageRoute(builder: (context) => GameScreen(timeControl: timeControl!)));
           }
         },
         child: Container(
@@ -207,7 +209,7 @@ class _CustomGameDialogState extends State<CustomGameDialog> {
               }),
           SwitchListTile(
               title:
-                  Text('Rated', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const Text('Rated', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               value: isRated,
               onChanged: (bool value) {
                 setState(() {
@@ -233,8 +235,8 @@ class _CustomGameDialogState extends State<CustomGameDialog> {
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text('Cancel',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+              child: const Text('Cancel',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
           TextButton(
               onPressed: () {
                 // Handle create game action
@@ -251,7 +253,7 @@ class _CustomGameDialogState extends State<CustomGameDialog> {
                     TimeControl(time: time, increment: Duration(seconds: mappedIncrementValue)));
               },
               child:
-                  Text('Create', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)))
+                  const Text('Create', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)))
         ]);
   }
 }

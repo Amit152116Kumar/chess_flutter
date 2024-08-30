@@ -1,9 +1,8 @@
-import 'package:chess_flutter/backend/fen_handler.dart';
+import 'package:chess_flutter/backend/FenClass.dart';
 import 'package:chess_flutter/backend/helper.dart';
+import 'package:chess_flutter/models/Move.dart';
+import 'package:chess_flutter/models/Piece.dart';
 import 'package:chess_flutter/models/Square.dart';
-
-import '../models/Move.dart';
-import '../models/Piece.dart';
 
 class Game {
   int score = 0;
@@ -13,10 +12,9 @@ class Game {
   late FEN fen;
   late GameStatus gameStatus;
   late Square selectedSquare;
-  late Piece selectedPiece;
 
-// todo Board Representation -> https://en.wikipedia.org/wiki/Board_representation_(computer_chess)
-// todo 3-fold repetition -> https://en.wikipedia.org/wiki/Board_representation_(computer_chess)#:~:text=Board%20representation%20typically,separate%20data%20structures.
+// TODO Board Representation -> https://en.wikipedia.org/wiki/Board_representation_(computer_chess)
+// TODO 3-fold repetition -> https://en.wikipedia.org/wiki/Board_representation_(computer_chess)
 
   Game(String fenPosition) {
     gameStatus = GameStatus.inProgress;
@@ -28,6 +26,8 @@ class Game {
   }
 
   void setSelectedSquareIdx(int idx) {
+    if (gameStatus == GameStatus.gameOver) return;
+
     isSelectedSquare = true;
     selectedSquare = fen.board[idx];
     if (isSelectedSquare == false || selectedSquare.piece == null) {
@@ -35,42 +35,50 @@ class Game {
       isSelectedSquare = false;
       return;
     }
-    selectedPiece = selectedSquare.piece!;
-    _generateLegalMoves();
+    legalMoves = _generateLegalMoves(selectedSquare);
   }
 
-  void _generateLegalMoves() {
-    legalMoves = [];
+  List<int> _generateLegalMoves(Square selectedSquare, {bool attackOnly = false}) {
     List<int> partialLegalMoves = [];
 
     // Generate legal moves
-    switch (selectedPiece.name) {
+    switch (selectedSquare.piece!.name) {
       case PieceName.pawn:
-        _generatePawnMoves(partialLegalMoves);
+        if (attackOnly) {
+          partialLegalMoves = _generatePawnAttackMoves(selectedSquare);
+        } else {
+          partialLegalMoves = _generatePawnMoves(selectedSquare);
+        }
         break;
       case PieceName.knight:
-        _generateKnightMoves(partialLegalMoves);
+        partialLegalMoves = _generateKnightMoves(selectedSquare);
         break;
       case PieceName.bishop:
-        _generateBishopMoves(partialLegalMoves);
+        partialLegalMoves = _generateBishopMoves(selectedSquare);
         break;
       case PieceName.rook:
-        _generateRookMoves(partialLegalMoves);
+        partialLegalMoves = _generateRookMoves(selectedSquare);
         break;
       case PieceName.queen:
-        _generateQueenMoves(partialLegalMoves);
+        partialLegalMoves = _generateQueenMoves(selectedSquare);
         break;
       case PieceName.king:
-        _generateKingMoves(partialLegalMoves);
+        partialLegalMoves = _generateKingMoves(selectedSquare);
         break;
     }
-    legalMoves = partialLegalMoves;
-    _filterLegalMoves(partialLegalMoves);
+    return _filterLegalMoves(partialLegalMoves);
   }
 
-  void _filterLegalMoves(List<int> moves) {}
+  List<int> _filterLegalMoves(List<int> moves) {
+    return moves;
+  }
 
-  void _generateKnightMoves(List<int> moves) {
+  bool isKingInCheck(FEN tempFen, bool isWhitePiece) {
+    return true;
+  }
+
+  List<int> _generateKnightMoves(Square selectedSquare) {
+    List<int> moves = [];
     List<int> long = [2, -2];
     List<int> short = [1, -1];
 
@@ -83,7 +91,7 @@ class Game {
           if (fen.board[targetIdx].piece == null) {
             moves.add(targetIdx);
           } else {
-            if (fen.board[targetIdx].piece!.isWhitePiece != selectedPiece.isWhitePiece) {
+            if (fen.board[targetIdx].piece!.isWhitePiece != selectedSquare.piece!.isWhitePiece) {
               moves.add(targetIdx);
             }
           }
@@ -100,18 +108,52 @@ class Game {
           if (fen.board[targetIdx].piece == null) {
             moves.add(targetIdx);
           } else {
-            if (fen.board[targetIdx].piece!.isWhitePiece != selectedPiece.isWhitePiece) {
+            if (fen.board[targetIdx].piece!.isWhitePiece != selectedSquare.piece!.isWhitePiece) {
               moves.add(targetIdx);
             }
           }
         }
       }
     }
+    return moves;
   }
 
-  void _generatePawnMoves(List<int> moves) {
-    var direction = selectedPiece.isWhitePiece ? 1 : -1;
+  List<int> _generatePawnMoves(Square selectedSquare) {
+    List<int> moves = [];
+    var temp = _generatePawnAttackMoves(selectedSquare);
+
+    for (int i = 0; i < temp.length; i++) {
+      var targetIdx = temp[i];
+      if (fen.board[targetIdx].piece != null) {
+        var piece = fen.board[targetIdx].piece!;
+
+        piece.isWhitePiece != selectedSquare.piece!.isWhitePiece ? moves.add(targetIdx) : null;
+      }
+    }
+    moves += _generatePawnForwardMoves(selectedSquare);
+    return moves;
+  }
+
+  List<int> _generatePawnAttackMoves(Square selectedSquare) {
+    List<int> moves = [];
     List<int> offset = [1, -1, 8];
+    var selectedPiece = selectedSquare.piece!;
+    var direction = selectedPiece.isWhitePiece ? 1 : -1;
+    // pawn can capture diagonally
+
+    for (int i = 0; i < 2; i++) {
+      var rank = selectedSquare.rank + direction;
+      var file = selectedSquare.file + offset[i];
+      if (isOnBoard(rank, file)) moves.add(rank * 8 + file);
+    }
+    return moves;
+  }
+
+  List<int> _generatePawnForwardMoves(Square selectedSquare) {
+    List<int> moves = [];
+    List<int> offset = [1, -1, 8];
+    var selectedPiece = selectedSquare.piece!;
+    var direction = selectedPiece.isWhitePiece ? 1 : -1;
 
     // pawn can move 1 square forward if the square is empty
     var targetIdx = selectedSquare.idx + offset[2] * direction;
@@ -128,18 +170,6 @@ class Game {
       }
     }
 
-    // pawn can capture diagonally
-    for (int i = 0; i < 2; i++) {
-      var rank = selectedSquare.rank + direction;
-      var file = selectedSquare.file + offset[i];
-      targetIdx = rank * 8 + file;
-      if (isOnBoard(rank, file) && fen.board[targetIdx].piece != null) {
-        var piece = fen.board[targetIdx].piece!;
-
-        piece.isWhitePiece != selectedPiece.isWhitePiece ? moves.add(targetIdx) : null;
-      }
-    }
-
     // en-passant move
     if (fen.enPassantSquare != -1) {
       var square = fen.board[fen.enPassantSquare];
@@ -147,9 +177,12 @@ class Game {
         moves.add(square.idx + 8 * direction);
       }
     }
+
+    return moves;
   }
 
-  void _generateBishopMoves(List<int> moves) {
+  List<int> _generateBishopMoves(Square selectedSquare) {
+    List<int> moves = [];
     List<int> offset = [-1, 1];
     for (int i = 0; i < 2; i++) {
       for (int j = 0; j < 2; j++) {
@@ -161,7 +194,7 @@ class Game {
             if (fen.board[targetIdx].piece == null) {
               moves.add(targetIdx);
             } else {
-              if (fen.board[targetIdx].piece!.isWhitePiece != selectedPiece.isWhitePiece) {
+              if (fen.board[targetIdx].piece!.isWhitePiece != selectedSquare.piece!.isWhitePiece) {
                 moves.add(targetIdx);
               }
               break;
@@ -173,9 +206,11 @@ class Game {
         }
       }
     }
+    return moves;
   }
 
-  void _generateKingMoves(List<int> moves) {
+  List<int> _generateKingMoves(Square selectedSquare) {
+    List<int> moves = [];
     List<int> arr = [0, 1, -1];
     for (int i = 0; i < arr.length; i++) {
       for (int j = 0; j < arr.length; j++) {
@@ -186,7 +221,7 @@ class Game {
           if (fen.board[targetIdx].piece == null) {
             moves.add(targetIdx);
           } else {
-            if (fen.board[targetIdx].piece!.isWhitePiece != selectedPiece.isWhitePiece) {
+            if (fen.board[targetIdx].piece!.isWhitePiece != selectedSquare.piece!.isWhitePiece) {
               moves.add(targetIdx);
             }
           }
@@ -238,14 +273,18 @@ class Game {
         }
       }
     }
+    return moves;
   }
 
-  void _generateQueenMoves(List<int> moves) {
-    _generateBishopMoves(moves);
-    _generateRookMoves(moves);
+  List<int> _generateQueenMoves(Square selectedSquare) {
+    List<int> moves = [];
+    moves += _generateBishopMoves(selectedSquare);
+    moves += _generateRookMoves(selectedSquare);
+    return moves;
   }
 
-  void _generateRookMoves(List<int> moves) {
+  List<int> _generateRookMoves(Square selectedSquare) {
+    List<int> moves = [];
     List<int> arr = [-1, 1];
 
     // Vertical Moves
@@ -258,7 +297,7 @@ class Game {
         if (fen.board[targetIdx].piece == null) {
           moves.add(targetIdx);
         } else {
-          if (fen.board[targetIdx].piece!.isWhitePiece != selectedPiece.isWhitePiece) {
+          if (fen.board[targetIdx].piece!.isWhitePiece != selectedSquare.piece!.isWhitePiece) {
             moves.add(targetIdx);
           }
           break;
@@ -277,7 +316,7 @@ class Game {
         if (fen.board[targetIdx].piece == null) {
           moves.add(targetIdx);
         } else {
-          if (fen.board[targetIdx].piece!.isWhitePiece != selectedPiece.isWhitePiece) {
+          if (fen.board[targetIdx].piece!.isWhitePiece != selectedSquare.piece!.isWhitePiece) {
             moves.add(targetIdx);
           }
           break;
@@ -285,6 +324,7 @@ class Game {
         file = file + direction;
       }
     }
+    return moves;
   }
 
   bool isOnBoard(int idx, [int? file]) {
@@ -295,7 +335,7 @@ class Game {
   void makeMove(int targetIdx) async {
     legalMoves = [];
     moveHistory.add(Move(selectedSquare.idx, targetIdx));
-
+    var selectedPiece = selectedSquare.piece!;
     var capturedPiece = fen.board[targetIdx].piece;
     // check if the move is a capture
     if (capturedPiece != null) {
@@ -374,6 +414,10 @@ class Game {
 
     fen.board[selectedSquare.idx].piece = null;
     fen.board[targetIdx].piece = selectedPiece;
+
+    selectedPiece.attackSquares = _generateLegalMoves(fen.board[targetIdx], attackOnly: true);
+
+    // print("Attack Squares: ${selectedPiece.attackSquares.map((e) => getSquareName(e))}");
 
     // check if the move is a promotion move
 
